@@ -98,6 +98,14 @@
         </div>
     </section>
 
+    <section id="promociones" class="py-20 px-6 bg-slate-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-black mb-3 uppercase italic tracking-tighter text-gs-dark text-center">Promociones</h2>
+            <p class="text-center text-gray-600 mb-10">Aprovecha las ofertas activas de la temporada.</p>
+            <div id="lista-promociones" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </section>
+
     <div id="bookingModal" class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm items-center justify-center p-4">
         <div class="modal-content bg-white w-full max-w-md rounded-[2.5rem] p-8 relative shadow-2xl text-gs-dark text-left">
             <button onclick="closeModal()" class="absolute top-6 right-6 text-gray-400 text-2xl font-bold hover:text-gs-dark transition">&times;</button>
@@ -228,7 +236,42 @@
             initComentariosForm();
             cargarComentarios();
             await cargarMediaVisual();
+            await cargarPromocionesPublicas();
         };
+
+        async function cargarPromocionesPublicas() {
+            const cont = document.getElementById('lista-promociones');
+            if (!cont) return;
+
+            try {
+                const res = await fetch(`${API_URL}/obtener-promociones`);
+                if (!res.ok) throw new Error('No se pudieron cargar promociones');
+                const promos = await res.json();
+                if (!Array.isArray(promos) || promos.length === 0) {
+                    cont.innerHTML = '<div class="bubble-card p-5 text-sm text-gray-600 md:col-span-2 lg:col-span-3">Por ahora no hay promociones activas.</div>';
+                    return;
+                }
+
+                const esc = (v) => String(v || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                cont.innerHTML = promos.map(p => {
+                    const precio = p.precio_especial ? `$${p.precio_especial}` : null;
+                    const descuento = p.descuento_porcentaje ? `${p.descuento_porcentaje}% de descuento` : null;
+                    const beneficio = precio || descuento || 'Consulta en sucursal';
+                    const codigo = p.codigo ? `Codigo: ${esc(p.codigo)}` : 'Sin código';
+                    return `
+                        <div class="bubble-card p-6 border-none shadow-lg">
+                            <p class="text-xs font-black uppercase tracking-widest text-gs-dark/70 mb-2">Promocion activa</p>
+                            <h3 class="text-2xl font-black text-gs-dark mb-2">${esc(p.titulo)}</h3>
+                            <p class="text-sm text-gray-600 mb-4">${esc(p.descripcion || 'Sin descripción')}</p>
+                            <div class="bg-gs-dark text-gs-yellow rounded-xl p-3 mb-3 font-black">${beneficio}</div>
+                            <p class="text-xs uppercase tracking-wide text-gray-500">${codigo}</p>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<div class="bubble-card p-5 text-sm text-red-600 md:col-span-2 lg:col-span-3">No se pudieron cargar las promociones.</div>';
+            }
+        }
 
         async function cargarMediaVisual() {
             try {

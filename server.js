@@ -117,6 +117,16 @@ const db = new sqlite3.Database('./gs_car_detail.sqlite', (err) => {
                 gallery_5 TEXT,
                 gallery_6 TEXT
             )`);
+            db.run(`CREATE TABLE IF NOT EXISTS promociones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT,
+                descripcion TEXT,
+                precio_especial REAL,
+                descuento_porcentaje REAL,
+                codigo TEXT,
+                activa INTEGER DEFAULT 1,
+                fecha_creacion TEXT DEFAULT (datetime('now', 'localtime'))
+            )`);
             
             db.get("SELECT COUNT(*) AS count FROM servicios", (err, row) => {
                 if (row && row.count === 0) {
@@ -237,6 +247,20 @@ app.post('/admin-login', (req, res) => {
 app.get('/obtener-paquetes', (req, res) => {
     db.all('SELECT * FROM servicios', (err, r) => {
         if(err) return res.status(500).json({error: "Database error"});
+        res.json(r);
+    });
+});
+
+app.get('/obtener-promociones', (req, res) => {
+    db.all('SELECT * FROM promociones WHERE activa = 1 ORDER BY id DESC', (err, r) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(r);
+    });
+});
+
+app.get('/admin-obtener-promociones', checkAuth, (req, res) => {
+    db.all('SELECT * FROM promociones ORDER BY id DESC', (err, r) => {
+        if (err) return res.status(500).json({ error: "Database error" });
         res.json(r);
     });
 });
@@ -421,6 +445,72 @@ app.post('/eliminar-paquete', checkAuth, (req, res) => {
     db.run('DELETE FROM servicios WHERE id = ?', [id], function(err) {
         if (err) return res.status(500).json({ error: "Database error" });
         if (this.changes === 0) return res.status(404).json({ error: "Paquete no encontrado" });
+        res.sendStatus(200);
+    });
+});
+
+app.post('/crear-promocion', checkAuth, (req, res) => {
+    const { titulo, descripcion, precio_especial, descuento_porcentaje, codigo, activa } = req.body;
+    if (!titulo || String(titulo).trim().length < 2) {
+        return res.status(400).json({ error: 'Titulo invalido' });
+    }
+
+    const precioEspecial = precio_especial === '' || precio_especial == null ? null : Number(precio_especial);
+    const descuento = descuento_porcentaje === '' || descuento_porcentaje == null ? null : Number(descuento_porcentaje);
+
+    db.run(
+        `INSERT INTO promociones (titulo, descripcion, precio_especial, descuento_porcentaje, codigo, activa)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+            String(titulo).trim(),
+            String(descripcion || '').trim(),
+            Number.isFinite(precioEspecial) ? precioEspecial : null,
+            Number.isFinite(descuento) ? descuento : null,
+            String(codigo || '').trim(),
+            activa === false ? 0 : 1
+        ],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            res.json({ success: true, id: this.lastID });
+        }
+    );
+});
+
+app.post('/actualizar-promocion', checkAuth, (req, res) => {
+    const { id, titulo, descripcion, precio_especial, descuento_porcentaje, codigo, activa } = req.body;
+    if (!titulo || String(titulo).trim().length < 2) {
+        return res.status(400).json({ error: 'Titulo invalido' });
+    }
+
+    const precioEspecial = precio_especial === '' || precio_especial == null ? null : Number(precio_especial);
+    const descuento = descuento_porcentaje === '' || descuento_porcentaje == null ? null : Number(descuento_porcentaje);
+
+    db.run(
+        `UPDATE promociones
+         SET titulo = ?, descripcion = ?, precio_especial = ?, descuento_porcentaje = ?, codigo = ?, activa = ?
+         WHERE id = ?`,
+        [
+            String(titulo).trim(),
+            String(descripcion || '').trim(),
+            Number.isFinite(precioEspecial) ? precioEspecial : null,
+            Number.isFinite(descuento) ? descuento : null,
+            String(codigo || '').trim(),
+            activa ? 1 : 0,
+            id
+        ],
+        function(err) {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            if (this.changes === 0) return res.status(404).json({ error: 'Promocion no encontrada' });
+            res.sendStatus(200);
+        }
+    );
+});
+
+app.post('/eliminar-promocion', checkAuth, (req, res) => {
+    const { id } = req.body;
+    db.run('DELETE FROM promociones WHERE id = ?', [id], function(err) {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (this.changes === 0) return res.status(404).json({ error: 'Promocion no encontrada' });
         res.sendStatus(200);
     });
 });

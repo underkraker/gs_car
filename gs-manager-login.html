@@ -12,6 +12,7 @@
         input, select { background: #222 !important; border: 1px solid #333 !important; color: white !important; border-radius: 0.75rem; padding: 0.75rem; width: 100%; outline: none; }
         .btn-gs { background: var(--gs-yellow); color: black; font-weight: bold; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: 0.3s; width: 100%; text-transform: uppercase; }
         #adminContent { display: none; }
+        .overlay-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(2px); z-index: 120; align-items: center; justify-content: center; padding: 1rem; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-6">
@@ -55,39 +56,131 @@
                     <p class="text-gray-400 text-sm mb-4">Cargando estado...</p>
                 </div>
             </section>
-            <section class="admin-card">
-                <h2 class="text-xl font-bold mb-6 italic uppercase">💰 Precios</h2>
-                <div class="overflow-x-auto"><table class="w-full text-left"><tbody id="tablaPaquetes"></tbody></table></div>
-            </section>
         </div>
 
         <div class="admin-card mb-8">
-            <h2 class="text-xl font-bold mb-6 italic uppercase">➕ Nuevo Paquete / Promoción</h2>
-            <div class="grid md:grid-cols-5 gap-4 items-end">
-                <div class="md:col-span-2">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Nombre</p>
-                    <input type="text" id="nuevo_nombre" placeholder="Ej: Promo de verano">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <h2 class="text-xl font-bold italic uppercase">📦 Gestión de Paquetes</h2>
+                <button onclick="abrirModalNuevoPaquete()" class="btn-gs md:w-auto">Nuevo Paquete</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-800">
+                            <th class="py-3 pr-3">Nombre</th>
+                            <th class="py-3 pr-3">Sedán</th>
+                            <th class="py-3 pr-3">Camioneta</th>
+                            <th class="py-3 pr-3">Incluye</th>
+                            <th class="py-3 pr-3">Tipo</th>
+                            <th class="py-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPaquetes"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <h2 class="text-xl font-bold italic uppercase">🔥 Promociones</h2>
+                <button onclick="abrirModalNuevaPromo()" class="btn-gs md:w-auto">Nueva Promoción</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-800">
+                            <th class="py-3 pr-3">Título</th>
+                            <th class="py-3 pr-3">Descripción</th>
+                            <th class="py-3 pr-3">Beneficio</th>
+                            <th class="py-3 pr-3">Código</th>
+                            <th class="py-3 pr-3">Estado</th>
+                            <th class="py-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPromos"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="modalEditarPaquete" class="overlay-modal">
+            <div class="admin-card w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-lg font-bold uppercase">Editar Paquete</h3>
+                    <button onclick="cerrarModalEditarPaquete()" class="text-gray-400 hover:text-white">✕</button>
                 </div>
-                <div>
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Sedán</p>
-                    <input type="number" id="nuevo_sedan" placeholder="0">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <input type="hidden" id="edit_pkg_id">
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Nombre</p><input type="text" id="edit_pkg_nombre"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio Sedán</p><input type="number" id="edit_pkg_sedan"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio Camioneta</p><input type="number" id="edit_pkg_camioneta"></div>
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Incluye / Qué se hace</p><textarea id="edit_pkg_incluye" class="w-full rounded-xl bg-[#222] border border-[#333] p-3 min-h-[120px] outline-none"></textarea></div>
+                    <div class="md:col-span-2"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" id="edit_pkg_promo" style="width:auto"> Marcar como paquete promocional</label></div>
                 </div>
-                <div>
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Camioneta</p>
-                    <input type="number" id="nuevo_camioneta" placeholder="0">
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                    <button onclick="aplicarEdicionPaquete()" class="btn-gs">Guardar</button>
+                    <button onclick="cerrarModalEditarPaquete()" class="btn-gs" style="background:#2a2a2a;color:#fff">Cancelar</button>
                 </div>
-                <div>
-                    <label class="inline-flex items-center gap-2 text-sm text-gray-300">
-                        <input type="checkbox" id="nuevo_promo" style="width:auto">
-                        Es promoción
-                    </label>
+            </div>
+        </div>
+
+        <div id="modalNuevoPaquete" class="overlay-modal">
+            <div class="admin-card w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-lg font-bold uppercase">Nuevo Paquete</h3>
+                    <button onclick="cerrarModalNuevoPaquete()" class="text-gray-400 hover:text-white">✕</button>
                 </div>
-                <div class="md:col-span-4">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Incluye / Qué se hace</p>
-                    <input type="text" id="nuevo_incluye" placeholder="Ej: Lavado exterior, aspirado, cera rápida...">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Nombre</p><input type="text" id="nuevo_pkg_nombre" placeholder="Ej: Pulido Full"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio Sedán</p><input type="number" id="nuevo_pkg_sedan" placeholder="0"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio Camioneta</p><input type="number" id="nuevo_pkg_camioneta" placeholder="0"></div>
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Incluye / Qué se hace</p><textarea id="nuevo_pkg_incluye" class="w-full rounded-xl bg-[#222] border border-[#333] p-3 min-h-[120px] outline-none" placeholder="Describe lo que incluye"></textarea></div>
+                    <div class="md:col-span-2"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" id="nuevo_pkg_promo" style="width:auto"> Marcar como promocional</label></div>
                 </div>
-                <div>
-                    <button onclick="crearPaquete()" class="btn-gs">Crear</button>
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                    <button onclick="crearPaquete()" class="btn-gs">Guardar</button>
+                    <button onclick="cerrarModalNuevoPaquete()" class="btn-gs" style="background:#2a2a2a;color:#fff">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalNuevaPromo" class="overlay-modal">
+            <div class="admin-card w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-lg font-bold uppercase">Nueva Promoción</h3>
+                    <button onclick="cerrarModalNuevaPromo()" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Título</p><input type="text" id="nuevo_promo_titulo" placeholder="Promo de verano"></div>
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Incluye / Descripción</p><textarea id="nuevo_promo_desc" class="w-full rounded-xl bg-[#222] border border-[#333] p-3 min-h-[120px] outline-none" placeholder="Ej: incluye encerado premium y aroma"></textarea></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio especial (opcional)</p><input type="number" id="nuevo_promo_precio" placeholder="350"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Descuento % (opcional)</p><input type="number" id="nuevo_promo_descuento" placeholder="10"></div>
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Código (opcional)</p><input type="text" id="nuevo_promo_codigo" placeholder="VERANO10"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                    <button onclick="crearPromocion()" class="btn-gs">Guardar</button>
+                    <button onclick="cerrarModalNuevaPromo()" class="btn-gs" style="background:#2a2a2a;color:#fff">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalEditarPromo" class="overlay-modal">
+            <div class="admin-card w-full max-w-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-lg font-bold uppercase">Editar Promoción</h3>
+                    <button onclick="cerrarModalEditarPromo()" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <input type="hidden" id="edit_promo_id">
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Título</p><input type="text" id="edit_promo_titulo"></div>
+                    <div class="md:col-span-2"><p class="text-xs uppercase text-gray-500 mb-1">Incluye / Descripción</p><textarea id="edit_promo_desc" class="w-full rounded-xl bg-[#222] border border-[#333] p-3 min-h-[120px] outline-none"></textarea></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Precio especial</p><input type="number" id="edit_promo_precio"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Descuento %</p><input type="number" id="edit_promo_descuento"></div>
+                    <div><p class="text-xs uppercase text-gray-500 mb-1">Código</p><input type="text" id="edit_promo_codigo"></div>
+                    <div class="flex items-center"><label class="inline-flex items-center gap-2 text-sm text-gray-300"><input type="checkbox" id="edit_promo_activa" style="width:auto"> Promoción activa</label></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                    <button onclick="aplicarEdicionPromo()" class="btn-gs">Guardar</button>
+                    <button onclick="cerrarModalEditarPromo()" class="btn-gs" style="background:#2a2a2a;color:#fff">Cancelar</button>
                 </div>
             </div>
         </div>
@@ -141,6 +234,8 @@
 
     <script>
         const API_URL = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+        let paquetesCache = [];
+        let promocionesCache = [];
         async function checkAccess() {
             const pass = document.getElementById('passInput').value;
             const res = await fetch(`${API_URL}/admin-login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pass}) });
@@ -149,7 +244,7 @@
                 sessionStorage.setItem('adminPass', pass);
                 document.getElementById('loginScreen').style.display='none'; 
                 document.getElementById('adminContent').style.display='block'; 
-                cargarConfig(); cargarPaquetes(); cargarWhatsApp(); cargarCitas(); cargarMediaAdmin();
+                cargarConfig(); cargarPaquetes(); cargarPromociones(); cargarWhatsApp(); cargarCitas(); cargarMediaAdmin();
             }
             else { alert("Incorrecto"); }
         }
@@ -161,48 +256,63 @@
             document.getElementById('conf_local').value = data.telefono_local;
         }
 
+        function escapeHtml(v) {
+            return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
         async function cargarPaquetes() {
             const res = await fetch(`${API_URL}/obtener-paquetes`);
             const data = await res.json();
-            document.getElementById('tablaPaquetes').innerHTML = data.map(p => `
-                <tr class="border-b border-gray-800 align-top">
-                <td class="py-4 pr-3">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Nombre</p>
-                    <input type="text" id="n-${p.id}" value="${p.nombre || ''}">
-                </td>
-                <td class="py-4 pr-3">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Sedán</p>
-                    <input type="number" id="s-${p.id}" value="${p.precio_sedan}" class="w-24">
-                </td>
-                <td class="py-4 pr-3">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Camioneta</p>
-                    <input type="number" id="c-${p.id}" value="${p.precio_camioneta}" class="w-24">
-                </td>
-                <td class="py-4 pr-3">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Incluye</p>
-                    <input type="text" id="i-${p.id}" value="${p.incluye || ''}">
-                </td>
-                <td class="py-4 pr-3">
-                    <p class="text-[10px] uppercase text-gray-500 mb-1">Promoción</p>
-                    <label class="inline-flex items-center gap-2 text-xs text-gray-300">
-                        <input type="checkbox" id="promo-${p.id}" ${Number(p.es_promocion) ? 'checked' : ''} style="width:auto">
-                        Activa
-                    </label>
-                </td>
-                <td class="py-4 text-right whitespace-nowrap">
-                    <button onclick="updatePaquete(${p.id})" class="text-[10px] font-black uppercase mr-3">Guardar</button>
-                    <button onclick="eliminarPaquete(${p.id})" class="text-[10px] font-black uppercase text-red-400">Eliminar</button>
-                </td></tr>
+            paquetesCache = Array.isArray(data) ? data : [];
+
+            const tbody = document.getElementById('tablaPaquetes');
+            if (!paquetesCache.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500">No hay paquetes cargados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = paquetesCache.map(p => `
+                <tr class="border-b border-gray-800">
+                    <td class="py-3 pr-3 font-bold">${escapeHtml(p.nombre)}</td>
+                    <td class="py-3 pr-3">$${escapeHtml(p.precio_sedan)}</td>
+                    <td class="py-3 pr-3">$${escapeHtml(p.precio_camioneta)}</td>
+                    <td class="py-3 pr-3 max-w-[220px] text-gray-300">${escapeHtml(p.incluye || 'Sin descripción')}</td>
+                    <td class="py-3 pr-3">${Number(p.es_promocion) ? 'Promocional' : 'Normal'}</td>
+                    <td class="py-3 text-right whitespace-nowrap">
+                        <button onclick="abrirModalEditarPaquete(${p.id})" class="text-[10px] font-black uppercase mr-3">Editar</button>
+                        <button onclick="guardarPaquete(${p.id})" class="text-[10px] font-black uppercase mr-3 text-green-400">Guardar</button>
+                        <button onclick="eliminarPaquete(${p.id})" class="text-[10px] font-black uppercase text-red-400">Eliminar</button>
+                    </td>
+                </tr>
             `).join('');
         }
 
-        async function updatePaquete(id) {
+        function abrirModalEditarPaquete(id) {
+            const p = paquetesCache.find(x => Number(x.id) === Number(id));
+            if (!p) return;
+            document.getElementById('edit_pkg_id').value = p.id;
+            document.getElementById('edit_pkg_nombre').value = p.nombre || '';
+            document.getElementById('edit_pkg_sedan').value = p.precio_sedan || 0;
+            document.getElementById('edit_pkg_camioneta').value = p.precio_camioneta || 0;
+            document.getElementById('edit_pkg_incluye').value = p.incluye || '';
+            document.getElementById('edit_pkg_promo').checked = Number(p.es_promocion) === 1;
+            document.getElementById('modalEditarPaquete').style.display = 'flex';
+        }
+
+        function cerrarModalEditarPaquete() {
+            document.getElementById('modalEditarPaquete').style.display = 'none';
+        }
+
+        async function aplicarEdicionPaquete() {
             const pass = sessionStorage.getItem('adminPass');
-            const nombre = document.getElementById(`n-${id}`).value;
-            const p_sedan = document.getElementById(`s-${id}`).value;
-            const p_camioneta = document.getElementById(`c-${id}`).value;
-            const incluye = document.getElementById(`i-${id}`).value;
-            const es_promocion = document.getElementById(`promo-${id}`).checked;
+            const id = Number(document.getElementById('edit_pkg_id').value);
+            const nombre = document.getElementById('edit_pkg_nombre').value.trim();
+            const p_sedan = document.getElementById('edit_pkg_sedan').value;
+            const p_camioneta = document.getElementById('edit_pkg_camioneta').value;
+            const incluye = document.getElementById('edit_pkg_incluye').value.trim();
+            const es_promocion = document.getElementById('edit_pkg_promo').checked;
+
+            if (!nombre) return alert('El paquete necesita nombre');
 
             const res = await fetch(`${API_URL}/actualizar-paquete`, {
                 method: 'POST',
@@ -210,17 +320,31 @@
                 body: JSON.stringify({ id, nombre, p_sedan, p_camioneta, incluye, es_promocion })
             });
 
-            if (res.ok) alert("Paquete actualizado");
-            else alert("Error al autorizar la acción");
+            if (!res.ok) return alert('No se pudo guardar el paquete');
+            alert('Paquete actualizado');
+            cerrarModalEditarPaquete();
+            cargarPaquetes();
+        }
+
+        async function guardarPaquete(id) {
+            abrirModalEditarPaquete(id);
+        }
+
+        function abrirModalNuevoPaquete() {
+            document.getElementById('modalNuevoPaquete').style.display = 'flex';
+        }
+
+        function cerrarModalNuevoPaquete() {
+            document.getElementById('modalNuevoPaquete').style.display = 'none';
         }
 
         async function crearPaquete() {
             const pass = sessionStorage.getItem('adminPass');
-            const nombre = document.getElementById('nuevo_nombre').value.trim();
-            const p_sedan = document.getElementById('nuevo_sedan').value;
-            const p_camioneta = document.getElementById('nuevo_camioneta').value;
-            const incluye = document.getElementById('nuevo_incluye').value.trim();
-            const es_promocion = document.getElementById('nuevo_promo').checked;
+            const nombre = document.getElementById('nuevo_pkg_nombre').value.trim();
+            const p_sedan = document.getElementById('nuevo_pkg_sedan').value;
+            const p_camioneta = document.getElementById('nuevo_pkg_camioneta').value;
+            const incluye = document.getElementById('nuevo_pkg_incluye').value.trim();
+            const es_promocion = document.getElementById('nuevo_pkg_promo').checked;
 
             if (!nombre) return alert('Pon un nombre para el paquete');
 
@@ -232,12 +356,13 @@
 
             if (!res.ok) return alert('No se pudo crear el paquete');
 
-            document.getElementById('nuevo_nombre').value = '';
-            document.getElementById('nuevo_sedan').value = '';
-            document.getElementById('nuevo_camioneta').value = '';
-            document.getElementById('nuevo_incluye').value = '';
-            document.getElementById('nuevo_promo').checked = false;
+            document.getElementById('nuevo_pkg_nombre').value = '';
+            document.getElementById('nuevo_pkg_sedan').value = '';
+            document.getElementById('nuevo_pkg_camioneta').value = '';
+            document.getElementById('nuevo_pkg_incluye').value = '';
+            document.getElementById('nuevo_pkg_promo').checked = false;
             alert('Paquete creado');
+            cerrarModalNuevoPaquete();
             cargarPaquetes();
         }
 
@@ -249,10 +374,133 @@
                 headers: {'Content-Type':'application/json', 'x-admin-password': pass},
                 body: JSON.stringify({ id })
             });
-
             if (!res.ok) return alert('No se pudo eliminar el paquete');
             alert('Paquete eliminado');
             cargarPaquetes();
+        }
+
+        async function cargarPromociones() {
+            const pass = sessionStorage.getItem('adminPass');
+            const res = await fetch(`${API_URL}/admin-obtener-promociones`, { headers: { 'x-admin-password': pass } });
+            if (!res.ok) return;
+            promocionesCache = await res.json();
+
+            const tbody = document.getElementById('tablaPromos');
+            if (!promocionesCache.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500">No hay promociones activas.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = promocionesCache.map(p => {
+                const beneficio = p.precio_especial ? `$${p.precio_especial}` : (p.descuento_porcentaje ? `${p.descuento_porcentaje}%` : 'Sin beneficio');
+                return `
+                    <tr class="border-b border-gray-800">
+                        <td class="py-3 pr-3 font-bold">${escapeHtml(p.titulo)}</td>
+                        <td class="py-3 pr-3 max-w-[220px] text-gray-300">${escapeHtml(p.descripcion || '')}</td>
+                        <td class="py-3 pr-3">${escapeHtml(beneficio)}</td>
+                        <td class="py-3 pr-3">${escapeHtml(p.codigo || '-')}</td>
+                        <td class="py-3 pr-3">${Number(p.activa) ? 'Activa' : 'Inactiva'}</td>
+                        <td class="py-3 text-right whitespace-nowrap">
+                            <button onclick="abrirModalEditarPromo(${p.id})" class="text-[10px] font-black uppercase mr-3">Editar</button>
+                            <button onclick="guardarPromo(${p.id})" class="text-[10px] font-black uppercase mr-3 text-green-400">Guardar</button>
+                            <button onclick="eliminarPromocion(${p.id})" class="text-[10px] font-black uppercase text-red-400">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function abrirModalNuevaPromo() {
+            document.getElementById('modalNuevaPromo').style.display = 'flex';
+        }
+
+        function cerrarModalNuevaPromo() {
+            document.getElementById('modalNuevaPromo').style.display = 'none';
+        }
+
+        async function crearPromocion() {
+            const pass = sessionStorage.getItem('adminPass');
+            const titulo = document.getElementById('nuevo_promo_titulo').value.trim();
+            const descripcion = document.getElementById('nuevo_promo_desc').value.trim();
+            const precio_especial = document.getElementById('nuevo_promo_precio').value;
+            const descuento_porcentaje = document.getElementById('nuevo_promo_descuento').value;
+            const codigo = document.getElementById('nuevo_promo_codigo').value.trim();
+
+            if (!titulo) return alert('La promoción necesita título');
+
+            const res = await fetch(`${API_URL}/crear-promocion`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ titulo, descripcion, precio_especial, descuento_porcentaje, codigo, activa: true })
+            });
+
+            if (!res.ok) return alert('No se pudo crear la promoción');
+            document.getElementById('nuevo_promo_titulo').value = '';
+            document.getElementById('nuevo_promo_desc').value = '';
+            document.getElementById('nuevo_promo_precio').value = '';
+            document.getElementById('nuevo_promo_descuento').value = '';
+            document.getElementById('nuevo_promo_codigo').value = '';
+            cerrarModalNuevaPromo();
+            alert('Promoción creada');
+            cargarPromociones();
+        }
+
+        function abrirModalEditarPromo(id) {
+            const p = promocionesCache.find(x => Number(x.id) === Number(id));
+            if (!p) return;
+            document.getElementById('edit_promo_id').value = p.id;
+            document.getElementById('edit_promo_titulo').value = p.titulo || '';
+            document.getElementById('edit_promo_desc').value = p.descripcion || '';
+            document.getElementById('edit_promo_precio').value = p.precio_especial ?? '';
+            document.getElementById('edit_promo_descuento').value = p.descuento_porcentaje ?? '';
+            document.getElementById('edit_promo_codigo').value = p.codigo || '';
+            document.getElementById('edit_promo_activa').checked = Number(p.activa) === 1;
+            document.getElementById('modalEditarPromo').style.display = 'flex';
+        }
+
+        function cerrarModalEditarPromo() {
+            document.getElementById('modalEditarPromo').style.display = 'none';
+        }
+
+        async function aplicarEdicionPromo() {
+            const pass = sessionStorage.getItem('adminPass');
+            const id = Number(document.getElementById('edit_promo_id').value);
+            const titulo = document.getElementById('edit_promo_titulo').value.trim();
+            const descripcion = document.getElementById('edit_promo_desc').value.trim();
+            const precio_especial = document.getElementById('edit_promo_precio').value;
+            const descuento_porcentaje = document.getElementById('edit_promo_descuento').value;
+            const codigo = document.getElementById('edit_promo_codigo').value.trim();
+            const activa = document.getElementById('edit_promo_activa').checked;
+
+            if (!titulo) return alert('La promoción necesita título');
+
+            const res = await fetch(`${API_URL}/actualizar-promocion`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ id, titulo, descripcion, precio_especial, descuento_porcentaje, codigo, activa })
+            });
+
+            if (!res.ok) return alert('No se pudo actualizar la promoción');
+            cerrarModalEditarPromo();
+            alert('Promoción actualizada');
+            cargarPromociones();
+        }
+
+        async function guardarPromo(id) {
+            abrirModalEditarPromo(id);
+        }
+
+        async function eliminarPromocion(id) {
+            if (!confirm('¿Eliminar esta promoción?')) return;
+            const pass = sessionStorage.getItem('adminPass');
+            const res = await fetch(`${API_URL}/eliminar-promocion`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ id })
+            });
+            if (!res.ok) return alert('No se pudo eliminar la promoción');
+            alert('Promoción eliminada');
+            cargarPromociones();
         }
 
         async function updatePrecio(id) {
