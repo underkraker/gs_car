@@ -94,6 +94,7 @@
                     <button id="btn-paquete-3" onclick="openModal('Premium')" class="w-full py-4 rounded-xl border-2 border-gs-dark font-black uppercase hover:bg-gs-dark hover:text-white transition">Seleccionar</button>
                 </div>
             </div>
+            <div id="paquetes-extra" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-left mt-8"></div>
         </div>
     </section>
 
@@ -182,14 +183,43 @@
                 servicioSelect.innerHTML = data.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
                 data.forEach((p, i) => {
                     const idx = i + 1;
-                    document.getElementById(`nombre-paquete-${idx}`).innerText = p.nombre;
-                    document.getElementById(`precio-sedan-${idx}`).innerText = `$${p.precio_sedan}`;
-                    document.getElementById(`precio-camioneta-${idx}`).innerText = `$${p.precio_camioneta}`;
-                    const incluyeEl = document.getElementById(`incluye-${idx}`);
-                    if (incluyeEl) incluyeEl.innerText = p.incluye || 'Consulta detalles en sucursal';
-                    const btn = document.getElementById(`btn-paquete-${idx}`);
-                    if (btn) btn.onclick = () => openModal(p.nombre);
+                    if (idx <= 3) {
+                        const nombreEl = document.getElementById(`nombre-paquete-${idx}`);
+                        const sedanEl = document.getElementById(`precio-sedan-${idx}`);
+                        const camEl = document.getElementById(`precio-camioneta-${idx}`);
+                        if (nombreEl) nombreEl.innerText = p.nombre;
+                        if (sedanEl) sedanEl.innerText = `$${p.precio_sedan}`;
+                        if (camEl) camEl.innerText = `$${p.precio_camioneta}`;
+                        const incluyeEl = document.getElementById(`incluye-${idx}`);
+                        if (incluyeEl) incluyeEl.innerText = p.incluye || 'Consulta detalles en sucursal';
+                        const btn = document.getElementById(`btn-paquete-${idx}`);
+                        if (btn) btn.onclick = () => openModal(p.nombre);
+                    }
                 });
+
+                const extrasContainer = document.getElementById('paquetes-extra');
+                const extras = data.slice(3);
+                if (extrasContainer) {
+                    if (!extras.length) {
+                        extrasContainer.innerHTML = '';
+                    } else {
+                        extrasContainer.innerHTML = extras.map(p => `
+                            <div class="bubble-card p-8 flex flex-col border-none shadow-xl relative">
+                                ${Number(p.es_promocion) ? '<span class="absolute -top-3 right-4 bg-gs-dark text-gs-yellow px-3 py-1 rounded-full text-[10px] font-black uppercase">Promocion</span>' : ''}
+                                <h3 class="text-2xl font-bold mb-2 uppercase text-gs-dark">${String(p.nombre || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h3>
+                                <div class="space-y-3 mb-8 flex-grow">
+                                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl"><span>Sedan</span><span class="font-black text-xl">$${p.precio_sedan}</span></div>
+                                    <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl"><span>Camioneta</span><span class="font-black text-xl">$${p.precio_camioneta}</span></div>
+                                </div>
+                                <div class="mb-6 p-3 bg-slate-50 rounded-xl text-sm">
+                                    <p class="font-black uppercase text-xs mb-1">Incluye</p>
+                                    <p>${String(p.incluye || 'Consulta detalles en sucursal').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                                </div>
+                                <button onclick="openModal('${String(p.nombre || '').replace(/'/g, "\\'")}')" class="w-full py-4 rounded-xl border-2 border-gs-dark font-black uppercase hover:bg-gs-dark hover:text-white transition">Seleccionar</button>
+                            </div>
+                        `).join('');
+                    }
+                }
             } catch (error) {
                 console.error("Error cargando paquetes:", error);
                 mostrarError("No se pudieron cargar los paquetes. Por favor, recarga la página.");

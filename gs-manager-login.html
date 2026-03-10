@@ -60,6 +60,37 @@
                 <div class="overflow-x-auto"><table class="w-full text-left"><tbody id="tablaPaquetes"></tbody></table></div>
             </section>
         </div>
+
+        <div class="admin-card mb-8">
+            <h2 class="text-xl font-bold mb-6 italic uppercase">➕ Nuevo Paquete / Promoción</h2>
+            <div class="grid md:grid-cols-5 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Nombre</p>
+                    <input type="text" id="nuevo_nombre" placeholder="Ej: Promo de verano">
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Sedán</p>
+                    <input type="number" id="nuevo_sedan" placeholder="0">
+                </div>
+                <div>
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Camioneta</p>
+                    <input type="number" id="nuevo_camioneta" placeholder="0">
+                </div>
+                <div>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-300">
+                        <input type="checkbox" id="nuevo_promo" style="width:auto">
+                        Es promoción
+                    </label>
+                </div>
+                <div class="md:col-span-4">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Incluye / Qué se hace</p>
+                    <input type="text" id="nuevo_incluye" placeholder="Ej: Lavado exterior, aspirado, cera rápida...">
+                </div>
+                <div>
+                    <button onclick="crearPaquete()" class="btn-gs">Crear</button>
+                </div>
+            </div>
+        </div>
         <div class="admin-card">
             <h2 class="text-xl font-bold mb-6 italic uppercase">Citas Agendadas</h2>
             <div class="overflow-x-auto">
@@ -151,7 +182,17 @@
                     <p class="text-[10px] uppercase text-gray-500 mb-1">Incluye</p>
                     <input type="text" id="i-${p.id}" value="${p.incluye || ''}">
                 </td>
-                <td class="py-4 text-right whitespace-nowrap"><button onclick="updatePaquete(${p.id})" class="text-[10px] font-black uppercase">Guardar</button></td></tr>
+                <td class="py-4 pr-3">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Promoción</p>
+                    <label class="inline-flex items-center gap-2 text-xs text-gray-300">
+                        <input type="checkbox" id="promo-${p.id}" ${Number(p.es_promocion) ? 'checked' : ''} style="width:auto">
+                        Activa
+                    </label>
+                </td>
+                <td class="py-4 text-right whitespace-nowrap">
+                    <button onclick="updatePaquete(${p.id})" class="text-[10px] font-black uppercase mr-3">Guardar</button>
+                    <button onclick="eliminarPaquete(${p.id})" class="text-[10px] font-black uppercase text-red-400">Eliminar</button>
+                </td></tr>
             `).join('');
         }
 
@@ -161,15 +202,57 @@
             const p_sedan = document.getElementById(`s-${id}`).value;
             const p_camioneta = document.getElementById(`c-${id}`).value;
             const incluye = document.getElementById(`i-${id}`).value;
+            const es_promocion = document.getElementById(`promo-${id}`).checked;
 
             const res = await fetch(`${API_URL}/actualizar-paquete`, {
                 method: 'POST',
                 headers: {'Content-Type':'application/json', 'x-admin-password': pass},
-                body: JSON.stringify({ id, nombre, p_sedan, p_camioneta, incluye })
+                body: JSON.stringify({ id, nombre, p_sedan, p_camioneta, incluye, es_promocion })
             });
 
             if (res.ok) alert("Paquete actualizado");
             else alert("Error al autorizar la acción");
+        }
+
+        async function crearPaquete() {
+            const pass = sessionStorage.getItem('adminPass');
+            const nombre = document.getElementById('nuevo_nombre').value.trim();
+            const p_sedan = document.getElementById('nuevo_sedan').value;
+            const p_camioneta = document.getElementById('nuevo_camioneta').value;
+            const incluye = document.getElementById('nuevo_incluye').value.trim();
+            const es_promocion = document.getElementById('nuevo_promo').checked;
+
+            if (!nombre) return alert('Pon un nombre para el paquete');
+
+            const res = await fetch(`${API_URL}/crear-paquete`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ nombre, p_sedan, p_camioneta, incluye, es_promocion })
+            });
+
+            if (!res.ok) return alert('No se pudo crear el paquete');
+
+            document.getElementById('nuevo_nombre').value = '';
+            document.getElementById('nuevo_sedan').value = '';
+            document.getElementById('nuevo_camioneta').value = '';
+            document.getElementById('nuevo_incluye').value = '';
+            document.getElementById('nuevo_promo').checked = false;
+            alert('Paquete creado');
+            cargarPaquetes();
+        }
+
+        async function eliminarPaquete(id) {
+            if (!confirm('¿Eliminar este paquete?')) return;
+            const pass = sessionStorage.getItem('adminPass');
+            const res = await fetch(`${API_URL}/eliminar-paquete`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ id })
+            });
+
+            if (!res.ok) return alert('No se pudo eliminar el paquete');
+            alert('Paquete eliminado');
+            cargarPaquetes();
         }
 
         async function updatePrecio(id) {

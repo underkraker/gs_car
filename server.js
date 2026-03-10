@@ -130,8 +130,12 @@ const db = new sqlite3.Database('./gs_car_detail.sqlite', (err) => {
             db.all("PRAGMA table_info(servicios)", (err, cols) => {
                 if (err) return;
                 const hasIncluye = Array.isArray(cols) && cols.some(c => c.name === 'incluye');
+                const hasPromo = Array.isArray(cols) && cols.some(c => c.name === 'es_promocion');
                 if (!hasIncluye) {
                     db.run("ALTER TABLE servicios ADD COLUMN incluye TEXT DEFAULT ''");
+                }
+                if (!hasPromo) {
+                    db.run("ALTER TABLE servicios ADD COLUMN es_promocion INTEGER DEFAULT 0");
                 }
             });
             db.get("SELECT COUNT(*) AS count FROM configuracion", (err, row) => {
@@ -378,16 +382,47 @@ app.post('/actualizar-precio', checkAuth, (req, res) => {
 });
 
 app.post('/actualizar-paquete', checkAuth, (req, res) => {
-    const { id, nombre, p_sedan, p_camioneta, incluye } = req.body;
+    const { id, nombre, p_sedan, p_camioneta, incluye, es_promocion } = req.body;
     db.run(
-        'UPDATE servicios SET nombre = ?, precio_sedan = ?, precio_camioneta = ?, incluye = ? WHERE id = ?',
-        [nombre, p_sedan, p_camioneta, incluye || '', id],
+        'UPDATE servicios SET nombre = ?, precio_sedan = ?, precio_camioneta = ?, incluye = ?, es_promocion = ? WHERE id = ?',
+        [nombre, p_sedan, p_camioneta, incluye || '', es_promocion ? 1 : 0, id],
         function(err) {
             if (err) return res.status(500).json({ error: "Database error" });
             if (this.changes === 0) return res.status(404).json({ error: "Paquete no encontrado" });
             res.sendStatus(200);
         }
     );
+});
+
+app.post('/crear-paquete', checkAuth, (req, res) => {
+    const { nombre, p_sedan, p_camioneta, incluye, es_promocion } = req.body;
+    if (!nombre || String(nombre).trim().length < 2) {
+        return res.status(400).json({ error: "Nombre invalido" });
+    }
+
+    db.run(
+        'INSERT INTO servicios (nombre, precio_sedan, precio_camioneta, incluye, es_promocion) VALUES (?, ?, ?, ?, ?)',
+        [
+            String(nombre).trim(),
+            Number(p_sedan) || 0,
+            Number(p_camioneta) || 0,
+            String(incluye || '').trim(),
+            es_promocion ? 1 : 0
+        ],
+        function(err) {
+            if (err) return res.status(500).json({ error: "Database error" });
+            res.json({ success: true, id: this.lastID });
+        }
+    );
+});
+
+app.post('/eliminar-paquete', checkAuth, (req, res) => {
+    const { id } = req.body;
+    db.run('DELETE FROM servicios WHERE id = ?', [id], function(err) {
+        if (err) return res.status(500).json({ error: "Database error" });
+        if (this.changes === 0) return res.status(404).json({ error: "Paquete no encontrado" });
+        res.sendStatus(200);
+    });
 });
 
 app.post('/actualizar-config', checkAuth, (req, res) => {
