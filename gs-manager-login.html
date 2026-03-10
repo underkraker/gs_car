@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>GS Admin | Panel de Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --gs-yellow: #f4d03f; --gs-dark: #0a0a0a; }
+        body { font-family: 'Inter', sans-serif; background: var(--gs-dark); color: white; }
+        .admin-card { background: #151515; border: 1px solid #222; border-radius: 1.5rem; padding: 2rem; }
+        input, select { background: #222 !important; border: 1px solid #333 !important; color: white !important; border-radius: 0.75rem; padding: 0.75rem; width: 100%; outline: none; }
+        .btn-gs { background: var(--gs-yellow); color: black; font-weight: bold; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: 0.3s; width: 100%; text-transform: uppercase; }
+        #adminContent { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div id="loginScreen" class="w-full max-w-sm text-center">
+        <h1 class="font-brand text-gs-yellow text-xl mb-8 uppercase tracking-widest">GS Access</h1>
+        <div class="admin-card"><input type="password" id="passInput" placeholder="Contraseña" class="mb-4"><button onclick="checkAccess()" class="btn-gs">Entrar</button></div>
+    </div>
+
+    <div id="adminContent" class="w-full max-w-6xl py-10">
+        <header class="flex justify-between items-center mb-10 border-b border-gray-800 pb-6">
+            <h1 class="font-brand text-2xl text-gs-yellow uppercase tracking-widest">GS Admin Panel</h1>
+            <button onclick="location.reload()" class="text-xs text-gray-500 hover:text-white uppercase">Cerrar</button>
+        </header>
+
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <section class="admin-card">
+                <h2 class="text-xl font-bold mb-6 italic uppercase">📅 Agendar Cita</h2>
+                <form id="adminBooking" class="space-y-4">
+                    <input type="text" id="adm_nombre" placeholder="Nombre">
+                    <input type="tel" id="adm_tel" placeholder="WhatsApp">
+                    <input type="text" id="adm_modelo" placeholder="Vehículo">
+                    <select id="adm_servicio"><option value="Lavado Clásico">Lavado Clásico</option><option value="Detallado Básico">Detallado Básico</option><option value="Premium">Premium</option></select>
+                    <div class="grid grid-cols-2 gap-4"><input type="date" id="adm_fecha"><input type="time" id="adm_hora"></div>
+                    <button type="button" onclick="agendarInterno()" class="btn-gs">Registrar</button>
+                </form>
+            </section>
+            <section class="admin-card">
+                <h2 class="text-xl font-bold mb-6 italic uppercase">📱 Configuración</h2>
+                <div class="space-y-4">
+                    <input type="text" id="conf_personal" placeholder="Telefono personal">
+                    <input type="text" id="conf_local" placeholder="Telefono del negocio (WhatsApp)">
+                    <button onclick="guardarConfig()" class="btn-gs bg-white text-black">Actualizar Números</button>
+                </div>
+            </section>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8 mb-8">
+            <section class="admin-card">
+                <h2 class="text-xl font-bold mb-6 italic uppercase">📡 WhatsApp Bot</h2>
+                <div id="waStatus" class="text-center">
+                    <p class="text-gray-400 text-sm mb-4">Cargando estado...</p>
+                </div>
+            </section>
+            <section class="admin-card">
+                <h2 class="text-xl font-bold mb-6 italic uppercase">💰 Precios</h2>
+                <div class="overflow-x-auto"><table class="w-full text-left"><tbody id="tablaPaquetes"></tbody></table></div>
+            </section>
+        </div>
+        <div class="admin-card">
+            <h2 class="text-xl font-bold mb-6 italic uppercase">Citas Agendadas</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-800">
+                            <th class="py-3 pr-3">Cliente</th>
+                            <th class="py-3 pr-3">WhatsApp</th>
+                            <th class="py-3 pr-3">Vehiculo</th>
+                            <th class="py-3 pr-3">Servicio</th>
+                            <th class="py-3 pr-3">Fecha</th>
+                            <th class="py-3 pr-3">Hora</th>
+                            <th class="py-3 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCitas">
+                        <tr><td colspan="7" class="py-4 text-gray-500">Cargando citas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card mt-8">
+            <h2 class="text-xl font-bold mb-6 italic uppercase">Medios del Sitio</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <p class="text-sm text-gray-400 mb-2">Logo actual</p>
+                    <img id="previewLogoActual" src="43791.jpg" alt="Logo actual" class="w-28 h-28 rounded-full object-cover border border-gray-700 mb-4">
+                    <input type="file" id="logoFile" accept="image/*" class="mb-3">
+                    <button onclick="subirLogo()" class="btn-gs">Subir Logo</button>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400 mb-2">Imagen de galeria</p>
+                    <select id="gallerySlot" class="mb-3">
+                        <option value="1">Slot 1</option>
+                        <option value="2">Slot 2</option>
+                        <option value="3">Slot 3</option>
+                        <option value="4">Slot 4</option>
+                        <option value="5">Slot 5</option>
+                        <option value="6">Slot 6</option>
+                    </select>
+                    <input type="file" id="galleryFile" accept="image/*" class="mb-3">
+                    <button onclick="subirGaleria()" class="btn-gs">Subir Imagen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin.startsWith('http') ? window.location.origin : 'http://localhost:3000';
+        async function checkAccess() {
+            const pass = document.getElementById('passInput').value;
+            const res = await fetch(`${API_URL}/admin-login`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({password: pass}) });
+            const data = await res.json();
+            if(data.success) { 
+                sessionStorage.setItem('adminPass', pass);
+                document.getElementById('loginScreen').style.display='none'; 
+                document.getElementById('adminContent').style.display='block'; 
+                cargarConfig(); cargarPaquetes(); cargarWhatsApp(); cargarCitas(); cargarMediaAdmin();
+            }
+            else { alert("Incorrecto"); }
+        }
+
+        async function cargarConfig() {
+            const res = await fetch(`${API_URL}/obtener-config`);
+            const data = await res.json();
+            document.getElementById('conf_personal').value = data.telefono_personal;
+            document.getElementById('conf_local').value = data.telefono_local;
+        }
+
+        async function cargarPaquetes() {
+            const res = await fetch(`${API_URL}/obtener-paquetes`);
+            const data = await res.json();
+            document.getElementById('tablaPaquetes').innerHTML = data.map(p => `
+                <tr class="border-b border-gray-800 align-top">
+                <td class="py-4 pr-3">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Nombre</p>
+                    <input type="text" id="n-${p.id}" value="${p.nombre || ''}">
+                </td>
+                <td class="py-4 pr-3">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Sedán</p>
+                    <input type="number" id="s-${p.id}" value="${p.precio_sedan}" class="w-24">
+                </td>
+                <td class="py-4 pr-3">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Camioneta</p>
+                    <input type="number" id="c-${p.id}" value="${p.precio_camioneta}" class="w-24">
+                </td>
+                <td class="py-4 pr-3">
+                    <p class="text-[10px] uppercase text-gray-500 mb-1">Incluye</p>
+                    <input type="text" id="i-${p.id}" value="${p.incluye || ''}">
+                </td>
+                <td class="py-4 text-right whitespace-nowrap"><button onclick="updatePaquete(${p.id})" class="text-[10px] font-black uppercase">Guardar</button></td></tr>
+            `).join('');
+        }
+
+        async function updatePaquete(id) {
+            const pass = sessionStorage.getItem('adminPass');
+            const nombre = document.getElementById(`n-${id}`).value;
+            const p_sedan = document.getElementById(`s-${id}`).value;
+            const p_camioneta = document.getElementById(`c-${id}`).value;
+            const incluye = document.getElementById(`i-${id}`).value;
+
+            const res = await fetch(`${API_URL}/actualizar-paquete`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass},
+                body: JSON.stringify({ id, nombre, p_sedan, p_camioneta, incluye })
+            });
+
+            if (res.ok) alert("Paquete actualizado");
+            else alert("Error al autorizar la acción");
+        }
+
+        async function updatePrecio(id) {
+            const pass = sessionStorage.getItem('adminPass');
+            const p_sedan = document.getElementById(`s-${id}`).value;
+            const p_camioneta = document.getElementById(`c-${id}`).value;
+            const res = await fetch(`${API_URL}/actualizar-precio`, { 
+                method: 'POST', 
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass}, 
+                body: JSON.stringify({id, p_sedan, p_camioneta}) 
+            });
+            if(res.ok) alert("Precio actualizado");
+            else alert("Error al autorizar la acción");
+        }
+
+        async function guardarConfig() {
+            const pass = sessionStorage.getItem('adminPass');
+            const personal = document.getElementById('conf_personal').value;
+            const local = document.getElementById('conf_local').value;
+            const res = await fetch(`${API_URL}/actualizar-config`, { 
+                method: 'POST', 
+                headers: {'Content-Type':'application/json', 'x-admin-password': pass}, 
+                body: JSON.stringify({personal, local}) 
+            });
+            if(res.ok) alert("Números guardados");
+            else alert("Error de autorización");
+        }
+
+        async function agendarInterno() {
+            const nombre = document.getElementById('adm_nombre').value;
+            const tel = document.getElementById('adm_tel').value;
+            const modelo = document.getElementById('adm_modelo').value;
+            const servicio = document.getElementById('adm_servicio').value;
+            const fecha = document.getElementById('adm_fecha').value;
+            const hora = document.getElementById('adm_hora').value;
+            await fetch(`${API_URL}/registrar-cita`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({nombre, modelo, servicio, fecha, hora, telefono: tel.startsWith('52') ? tel : '52'+tel}) });
+            alert("Cita registrada y recordatorios activos.");
+            cargarCitas();
+        }
+
+        async function cargarCitas() {
+            const pass = sessionStorage.getItem('adminPass');
+            const tbody = document.getElementById('tablaCitas');
+            tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500">Cargando citas...</td></tr>';
+
+            const res = await fetch(`${API_URL}/obtener-citas`, {
+                headers: { 'x-admin-password': pass }
+            });
+
+            if (!res.ok) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-red-400">Error al cargar citas</td></tr>';
+                return;
+            }
+
+            const citas = await res.json();
+
+            if (!citas.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500">No hay citas registradas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = citas.map(c => `
+                <tr class="border-b border-gray-800">
+                    <td class="py-3 pr-3"><input type="text" id="ct-n-${c.id}" value="${c.nombre_cliente || ''}"></td>
+                    <td class="py-3 pr-3"><input type="text" id="ct-t-${c.id}" value="${c.telefono || ''}"></td>
+                    <td class="py-3 pr-3"><input type="text" id="ct-m-${c.id}" value="${c.modelo_auto || ''}"></td>
+                    <td class="py-3 pr-3"><input type="text" id="ct-s-${c.id}" value="${c.servicio || ''}"></td>
+                    <td class="py-3 pr-3"><input type="date" id="ct-f-${c.id}" value="${c.fecha_cita || ''}"></td>
+                    <td class="py-3 pr-3"><input type="time" id="ct-h-${c.id}" value="${c.hora_cita || ''}"></td>
+                    <td class="py-3 text-right whitespace-nowrap">
+                        <button onclick="guardarReagenda(${c.id})" class="text-[10px] font-black uppercase mr-3">Reagendar</button>
+                        <button onclick="eliminarCita(${c.id})" class="text-[10px] font-black uppercase text-red-400">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function eliminarCita(id) {
+            if (!confirm('¿Eliminar esta cita?')) return;
+            const pass = sessionStorage.getItem('adminPass');
+            const res = await fetch(`${API_URL}/eliminar-cita`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-password': pass
+                },
+                body: JSON.stringify({ id })
+            });
+
+            if (res.ok) {
+                alert('Cita eliminada');
+                cargarCitas();
+            } else {
+                alert('No se pudo eliminar la cita');
+            }
+        }
+
+        async function guardarReagenda(id) {
+            const pass = sessionStorage.getItem('adminPass');
+            const nombre = document.getElementById(`ct-n-${id}`).value;
+            const telefono = document.getElementById(`ct-t-${id}`).value;
+            const modelo = document.getElementById(`ct-m-${id}`).value;
+            const servicio = document.getElementById(`ct-s-${id}`).value;
+            const fecha = document.getElementById(`ct-f-${id}`).value;
+            const hora = document.getElementById(`ct-h-${id}`).value;
+
+            const res = await fetch(`${API_URL}/reagendar-cita`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-admin-password': pass
+                },
+                body: JSON.stringify({ id, nombre, telefono, modelo, servicio, fecha, hora })
+            });
+
+            if (res.ok) {
+                alert('Cita actualizada');
+                cargarCitas();
+            } else {
+                alert('No se pudo actualizar la cita');
+            }
+        }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function cargarMediaAdmin() {
+            try {
+                const res = await fetch(`${API_URL}/obtener-media`);
+                if (!res.ok) return;
+                const media = await res.json();
+                const logo = document.getElementById('previewLogoActual');
+                if (logo && media.logo_path) logo.src = media.logo_path;
+            } catch (e) {}
+        }
+
+        async function subirLogo() {
+            const pass = sessionStorage.getItem('adminPass');
+            const input = document.getElementById('logoFile');
+            const file = input.files[0];
+            if (!file) return alert('Selecciona una imagen de logo');
+
+            const imageData = await fileToDataUrl(file);
+            const res = await fetch(`${API_URL}/subir-logo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': pass },
+                body: JSON.stringify({ imageData })
+            });
+
+            if (res.ok) {
+                alert('Logo actualizado');
+                input.value = '';
+                cargarMediaAdmin();
+            } else {
+                alert('No se pudo subir el logo');
+            }
+        }
+
+        async function subirGaleria() {
+            const pass = sessionStorage.getItem('adminPass');
+            const slot = document.getElementById('gallerySlot').value;
+            const input = document.getElementById('galleryFile');
+            const file = input.files[0];
+            if (!file) return alert('Selecciona una imagen para la galeria');
+
+            const imageData = await fileToDataUrl(file);
+            const res = await fetch(`${API_URL}/subir-galeria`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-password': pass },
+                body: JSON.stringify({ slot, imageData })
+            });
+
+            if (res.ok) {
+                alert(`Imagen del slot ${slot} actualizada`);
+                input.value = '';
+            } else {
+                alert('No se pudo subir la imagen');
+            }
+        }
+
+        let waInterval = null;
+        async function cargarWhatsApp() {
+            actualizarEstadoWA();
+            if (waInterval) clearInterval(waInterval);
+            waInterval = setInterval(actualizarEstadoWA, 5000);
+        }
+
+        async function actualizarEstadoWA() {
+            try {
+                const pass = sessionStorage.getItem('adminPass');
+                const res = await fetch(`${API_URL}/whatsapp-status`, { headers: {'x-admin-password': pass} });
+                const data = await res.json();
+                const container = document.getElementById('waStatus');
+                if (data.connected) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center"><span class="text-3xl">✅</span></div>
+                            <p class="text-green-400 font-bold uppercase text-sm">Conectado</p>
+                            <button onclick="cerrarSesionWA()" class="btn-gs bg-red-600 text-white mt-2" style="background:#dc2626">Cerrar Sesión de WhatsApp</button>
+                        </div>`;
+                } else if (data.qr) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center gap-4">
+                            <p class="text-yellow-400 font-bold uppercase text-xs">Escanea con tu WhatsApp</p>
+                            <img src="${data.qr}" alt="QR WhatsApp" class="rounded-xl" style="width:220px;height:220px;background:white;padding:8px">
+                            <p class="text-gray-500 text-xs">Abre WhatsApp → Dispositivos vinculados → Vincular</p>
+                        </div>`;
+                } else {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center"><span class="text-3xl">⏳</span></div>
+                            <p class="text-yellow-400 font-bold text-sm">Generando código QR...</p>
+                            <p class="text-gray-500 text-xs">Espera unos segundos</p>
+                        </div>`;
+                }
+            } catch(e) {
+                document.getElementById('waStatus').innerHTML = '<p class="text-red-400 text-sm">Error al consultar estado de WhatsApp</p>';
+            }
+        }
+
+        async function cerrarSesionWA() {
+            if (!confirm('¿Seguro que deseas cerrar la sesión de WhatsApp? Se generará un nuevo QR.')) return;
+            const pass = sessionStorage.getItem('adminPass');
+            const res = await fetch(`${API_URL}/whatsapp-logout`, { method: 'POST', headers: {'x-admin-password': pass} });
+            if (res.ok) {
+                alert('Sesión cerrada. En unos segundos aparecerá el nuevo QR.');
+            } else {
+                alert('Error al cerrar sesión.');
+            }
+        }
+    </script>
+</body>
+</html>
